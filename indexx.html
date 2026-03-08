@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Müzeyyen's To-Do List</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      background: linear-gradient(to right, #fbc2eb, #a6c1ee);
+      padding: 30px;
+      color: #333;
+    }
+
+    h1 { 
+      font-size: 36px;
+      color: #fff;
+      text-shadow: 2px 2px 4px #00000050;
+    }
+
+    input, select {
+      padding: 10px;
+      border-radius: 25px;
+      border: none;
+      font-size: 16px;
+      margin-right: 5px;
+    }
+
+    button {
+      padding: 10px 15px;
+      border-radius: 25px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.1);
+    }
+
+    .add-btn { background-color: #ff7e5f; color: white; }
+
+    ul { list-style-type: none; padding: 0; margin-top: 20px; }
+
+    li {
+      background: #fff;
+      margin: 10px auto;
+      padding: 15px 20px;
+      max-width: 500px;
+      border-radius: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      font-size: 18px;
+      transition: transform 0.3s, background 0.3s;
+      position: relative;
+    }
+
+    li:hover { transform: scale(1.02); }
+
+    .completed { text-decoration: line-through; color: green; }
+
+    .completed::after {
+      content: " ✅";
+      position: absolute;
+      right: 10px;
+      animation: pop 0.5s ease-in-out;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
+
+    .tick-btn, .delete-btn {
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-size: 20px;
+      margin-left: 10px;
+      transition: transform 0.2s;
+    }
+
+    .tick-btn:hover { color: green; transform: scale(1.3); }
+    .delete-btn:hover { color: red; transform: scale(1.3); }
+
+    .category-label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <h1>📝 Müzeyyen's To-Do List</h1>
+
+  <input id="taskInput" placeholder="Add a new task">
+ <select id="categorySelect">
+  <option value="Reisen">🌍 Reisen</option>
+  <option value="Einkaufen">🛒 Einkaufen</option>
+  <option value="Studium">📚 Studium</option>
+  <option value="Persönliche Ziele">🎯 Persönliche Ziele</option>
+  <option value="Andere">✨ Andere</option>
+</select>
+  <button class="add-btn" onclick="addTask()">Add ✨</button>
+
+  <h2 style="color:white; text-shadow:1px 1px 3px #000;">Tasks</h2>
+  <ul id="taskList"></ul>
+
+  <h2 style="color:white; text-shadow:1px 1px 3px #000;">Completed</h2>
+  <ul id="completedList"></ul>
+
+  <script>
+    const TASKS_KEY = "myMüzeyyensTasks";
+
+    const taskList = document.getElementById("taskList");
+    const completedList = document.getElementById("completedList");
+    const taskInput = document.getElementById("taskInput");
+    const categorySelect = document.getElementById("categorySelect");
+
+    // Load tasks
+    let tasks = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
+    tasks.forEach(t => addTaskToDOM(t.text, t.completed, t.category));
+
+    function addTask() {
+      const taskText = taskInput.value.trim();
+      const category = categorySelect.value;
+      if (taskText === "") return;
+      addTaskToDOM(taskText, false, category);
+      tasks.push({text: taskText, completed: false, category: category});
+      saveTasks();
+      taskInput.value = "";
+    }
+
+    function addTaskToDOM(text, completed, category) {
+      const li = document.createElement("li");
+
+      const span = document.createElement("span");
+      span.innerHTML = `<span class="category-label">${getCategoryEmoji(category)}</span>${text}`;
+      if (completed) span.classList.add("completed");
+
+      const tickBtn = document.createElement("button");
+      tickBtn.innerHTML = "✔";
+      tickBtn.className = "tick-btn";
+      tickBtn.onclick = () => {
+        span.classList.toggle("completed");
+        moveTask(li, span.classList.contains("completed"));
+        updateTask(text, span.classList.contains("completed"));
+      }
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.innerHTML = "🗑";
+      deleteBtn.className = "delete-btn";
+      deleteBtn.onclick = () => {
+        li.remove();
+        removeTask(text);
+      }
+
+      li.appendChild(span);
+      li.appendChild(tickBtn);
+      li.appendChild(deleteBtn);
+
+      if(completed){
+        completedList.appendChild(li);
+      } else {
+        taskList.appendChild(li);
+      }
+    }
+
+    function moveTask(li, completed){
+      if(completed){
+        completedList.appendChild(li);
+      } else {
+        taskList.appendChild(li);
+      }
+    }
+
+    function saveTasks(){
+      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+    }
+
+    function updateTask(text, completed){
+      tasks = tasks.map(t => {
+        if(t.text === text) t.completed = completed;
+        return t;
+      });
+      saveTasks();
+    }
+
+    function removeTask(text){
+      tasks = tasks.filter(t => t.text !== text);
+      saveTasks();
+    }
+
+    function getCategoryEmoji(category) {
+      switch(category){
+        case "Reisen": return "🌍";
+        case "Einkaufen": return "🛒";
+        case "Studium": return "📚";
+        case "Persönliche Ziele": return "🎯";
+        case "Andere": return "✨";
+        default: return "✨";
+      }
+    }
+
+  </script>
+</body>
+</html>
